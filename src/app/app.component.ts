@@ -27,7 +27,8 @@ export class AppComponent implements OnInit {
   @ViewChild('drawer') drawer: MatDrawer;
   @ViewChild('listsList') listsList: IonList;
 
-  currentIndex = 0;
+  currentId: string;
+  currentIndex: number = 0;
   currentList: any;
   currentUser: string = '';
   empty: boolean = true;
@@ -39,7 +40,7 @@ export class AppComponent implements OnInit {
     { value: '1', viewValue: 'Normal' },
     { value: '2', viewValue: 'Precios' },
   ];
-  prices = true;
+  prices = false;
   selected = '';
   token: string = '';
   undoList: any = [];
@@ -64,6 +65,9 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit() {
+    setTimeout(() => {
+      console.clear();
+    }, 1000);
     firebase.initializeApp({
       apiKey: 'AIzaSyBHQVuQM353vYWb3w7_ZQLBagrfJJ9TqgQ',
       authDomain: 'shopping-list-d9b5e.firebaseapp.com',
@@ -74,8 +78,8 @@ export class AppComponent implements OnInit {
     setTimeout(() => {
       if (this.lists.length > 0) {
         this.empty = false;
-        this.currentIndex = 0;
-        this.currentList = this.lists[this.currentIndex];
+        // this.currentIndex = 0;
+        // this.currentList = this.lists[this.currentIndex];
       }
     }, 1500);
   }
@@ -102,6 +106,7 @@ export class AppComponent implements OnInit {
     }
   }
 
+  existente: boolean = false;
   signup() {
     if (this.formLogin.valid) {
       this._shoppingListService.signUp(
@@ -112,10 +117,12 @@ export class AppComponent implements OnInit {
         this.token = this._shoppingListService.getToken();
         if (this.token != '') {
           this.logged = true;
+          this.existente = false;
           this.currentUser = this.formLogin.controls['email'].value;
 
           localStorage.setItem('upbToken', this.token);
         } else {
+          this.existente = true;
           this.formLogin.markAllAsTouched();
         }
       }, 1500);
@@ -124,18 +131,32 @@ export class AppComponent implements OnInit {
     }
   }
 
-  // POP
-  getList() {
-    this._shoppingListService.getList();
-    setTimeout(() => {
-      let x: any = this._shoppingListService.getLists2();
-      // for (const [key, value] of x.entries(x)) {
-      //   console.log(`${key}: ${value}`);
-      // }
-      console.log(x);
+  othersLists: any = [];
 
-      this.lists = x != null ? x[0] : [];
-    }, 1500);
+  getList() {
+    this._shoppingListService.getList().subscribe((res: any) => {
+      if (res.length > 0) {
+        res.forEach((list: any) => {
+          list.users.forEach((user: any) => {
+            if (user == this.currentUser) {
+              this.lists.push(list);
+            } else {
+              this.othersLists.push(list);
+            }
+          });
+        });
+        if (this.lists.length > 0) {
+          this.empty = false;
+          console.log('das', this.lists);
+          this.currentList = 0;
+          this.currentId = this.lists[0].id;
+          this.currentList = this.lists[0];
+        }
+        // console.log('xsa',this.currentList);
+      } else {
+        this.lists = res;
+      }
+    });
   }
 
   loginGoogle() {
@@ -151,6 +172,8 @@ export class AppComponent implements OnInit {
         this.lists[this.currentIndex].items.push(checked);
       }, 2000);
     }
+    let concatList = this.lists.concat(this.othersLists);
+    this._shoppingListService.putList(concatList);
   }
 
   print() {
@@ -158,17 +181,17 @@ export class AppComponent implements OnInit {
   }
 
   undo() {
-    let x = new Date();
-    if (this.undoList.length > 0) {
-      this.lists[this.currentIndex].items.push(this.undoList[0]);
-      this.undoList.splice(0, 1);
-    }
-    this.lists[this.currentIndex].items.forEach((item: any, index: number) => {
-      if (item.checked) {
-        this.lists[this.currentIndex].items.splice(index, 1);
-        this.lists[this.currentIndex].items.push(item);
-      }
-    });
+    // let x = new Date();
+    // if (this.undoList.length > 0) {
+    //   this.lists[this.currentIndex].items.push(this.undoList[0]);
+    //   this.undoList.splice(0, 1);
+    // }
+    // this.lists[this.currentIndex].items.forEach((item: any, index: number) => {
+    //   if (item.checked) {
+    //     this.lists[this.currentIndex].items.splice(index, 1);
+    //     this.lists[this.currentIndex].items.push(item);
+    //   }
+    // });
   }
 
   change() {
@@ -180,11 +203,19 @@ export class AppComponent implements OnInit {
   }
 
   deleteList(index: number) {
-    this.lists.splice(index, 1);
-
-    // if (this.lists.length <= 0) {
-    this.empty = true;
+    // let index;
+    // for (let i = 0; i < this.lists.length; i++) {
+    //   if (this.lists[i].id == id) {
+    //     index = i;
+    //     break;
+    //   }
     // }
+    this.lists.splice(index, 1);
+    let concatList = this.lists.concat(this.othersLists);
+    this._shoppingListService.putList(concatList);
+    if (this.lists.length <= 0) {
+      this.empty = true;
+    }
   }
 
   openModal(type: string, index: number = 0) {
@@ -195,8 +226,8 @@ export class AppComponent implements OnInit {
       this.itemsCompare = [];
       this.lists.forEach((list: any) => {
         list.items.forEach((item: any) => {
-          item.market = list.market;
-          item.price = parseFloat(item.price);
+          item.market = list.market ? list.market : 'N/A';
+          item.price = item.price ? parseFloat(item.price) : 'N/A';
           this.itemsCompare.push(item);
         });
       });
@@ -237,10 +268,18 @@ export class AppComponent implements OnInit {
     } else if (type == 'NEW_LIST') {
       data = { type: type };
     } else if (type == 'EDIT_LIST') {
+      // let index: number;
+      // for (let i = 0; i < this.lists.length; i++) {
+      //   if (this.lists[i].id == id) {
+      //     index = i;
+      //     break;
+      //   }
+      // }
+      // console.log(index!);
       data = {
-        name: this.lists[index!].name,
+        market: this.lists[index].market,
+        name: this.lists[index].name,
         type: type,
-        market: this.lists[index!].market,
       };
     } else if (type == 'DELETE_LIST') {
       data = { type: type };
@@ -281,80 +320,82 @@ export class AppComponent implements OnInit {
             uid: uuid.v4(),
             name: result.name,
             market: result.market,
-            items: [],
+            items: [''],
             users: [this.currentUser],
           });
-          if (this.lists.length < 1) {
+          let concatList = this.lists.concat(this.othersLists);
+          if (concatList.length < 1) {
             this._shoppingListService.postList(
-              this.lists[this.lists.length - 1]
+              concatList[concatList.length - 1]
             );
           } else {
-            this._shoppingListService.putList(this.lists);
+            this._shoppingListService.putList(concatList);
           }
         }
         if (this.lists.length > 0) {
           this.empty = false;
           this.currentList = this.lists[this.lists.length - 1];
 
-          this.currentIndex = this.lists.length - 1;
+          // this.currentIndex = this.lists.length - 1;
         }
       } else if (type == 'EDIT_LIST') {
         if (result != undefined && result != false) {
+          // let index: number;
+          // for (let i = 0; i < this.lists.length; i++) {
+          //   if (this.lists[i].id == id) {
+          //     index = i;
+          //     break;
+          //   }
+          // }
           this.lists[index].name = result.name;
           this.lists[index].market = result.market;
-          this._shoppingListService.putList(this.lists);
+          let concatList = this.lists.concat(this.othersLists);
+          this._shoppingListService.putList(concatList);
+          this.drawer.close();
         }
       } else if (type == 'DELETE_LIST') {
         if (result) {
-          if (this.currentIndex == index) {
-            this.empty = true;
-          }
-          this._shoppingListService.deleteList(index);
+          // if (this.currentIndex == index) {
+          //   this.empty = true;
+          // }
+          // this._shoppingListService.deleteList(index);
           this._shoppingListService.postList(this.lists);
         }
         if (this.lists.length <= 0) {
           this.empty = true;
         }
       } else if (type == 'NEW_ITEM') {
-        let id: number;
-        if (this.lists[this.currentIndex].items.length <= 0) {
-          id = 1;
-        } else {
-          id = this.lists[this.currentIndex].items.length + 1;
-        }
         if (result != undefined && result != false) {
           this.lists[this.currentIndex].items.push({
             name: result.name,
-            id: id,
             price: result.price,
             checked: false,
             date: new Date(),
           });
-
+          if (this.lists[this.currentIndex].items[0] == '') {
+            this.lists[this.currentIndex].items.splice(0, 1);
+          }
           this.lists[this.currentIndex].items.forEach(
             (item: any, index: number) => {
               if (item.checked) {
-                let checked = item;
-                // checked.push(item);
                 this.lists[this.currentIndex].items.splice(index, 1);
                 this.lists[this.currentIndex].items.push(item);
               }
             }
           );
-          // if (checked.length > 0) {
-          //   this.lists[this.currentIndex].items =
-          //     this.lists[this.currentIndex].items.concat(checked);
-          // }
+          let concatList = this.lists.concat(this.othersLists);
+          this._shoppingListService.putList(concatList);
         }
       } else if (type == 'EDIT_ITEM') {
         if (result != undefined && result != false) {
           this.lists[this.currentIndex].items[index].name = result.name;
           this.lists[this.currentIndex].items[index].price = result.price;
-          this.lists[this.currentIndex].items[index].market = result.market;
+          let concatList = this.lists.concat(this.othersLists);
+          this._shoppingListService.putList(concatList);
         }
       } else if (type == 'DELETE_ITEM') {
         if (result) {
-          this.lists[this.currentIndex].items.splice(index, 1);
+          // this.lists[this.currentIndex].items.splice(index, 1);
         }
       }
     });
@@ -362,8 +403,10 @@ export class AppComponent implements OnInit {
   }
 
   deleteItem(index: number) {
-    this.undoList.push(this.lists[this.currentIndex].items[index]);
+    // this.undoList.push(this.lists[this.currentIndex].items[index]);
     this.lists[this.currentIndex].items.splice(index, 1);
+    let concatList = this.lists.concat(this.othersLists);
+    this._shoppingListService.putList(concatList);
   }
 
   share() {
@@ -380,10 +423,18 @@ export class AppComponent implements OnInit {
 
   selectList(index: number) {
     this.empty = false;
-    this.drawer.close();
+    // let index: number;
+    // for (let i = 0; i < this.lists.length; i++) {
+    //   if (this.lists[i].id == id) {
+    //     index = i;
+    //     break;
+    //   }
+    // }
     this.currentIndex = index;
+    this.currentId = this.lists[index].id;
     this.currentList = this.lists[index];
     this.undoList = [];
+    this.drawer.close();
   }
 }
 
@@ -412,8 +463,6 @@ export class DialogOverviewExampleDialog {
       price: ['', []],
       id: ['', []],
     });
-    this.formItem.controls['name'].setValue('a');
-    this.formItem.controls['price'].setValue(10);
     if (data.type == 'EDIT_LIST') {
       this.formList.controls['name'].setValue(data.name);
       this.formList.controls['market'].setValue(data.market);

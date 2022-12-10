@@ -31,8 +31,17 @@
       </div>
     </div>
   </form>
+  <ng-container *ngIf="existente">
+    <span style="color: red; padding-left: 27%">Correo ya registrado</span>
+  </ng-container>
   <div
-    style="display: flex; flex-direction: column; width: 50%; padding-left: 27%"
+    style="
+      display: flex;
+      flex-direction: column;
+      width: 50%;
+      padding-left: 27%;
+      padding-top: 7px;
+    "
   >
     <button mat-raised-button color="primary" (click)="login()">Acceder</button>
     <br />

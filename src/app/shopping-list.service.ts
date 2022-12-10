@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { from, Observable } from 'rxjs';
+import { from, Observable, tap } from 'rxjs';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 import { Router } from '@angular/router';
@@ -22,11 +22,11 @@ export class ShoppingListService {
     firebase
       .auth()
       .signInWithEmailAndPassword(email, password)
-      .then((_) => {
+      .then((res: any) => {
         firebase
           .auth()
           .currentUser?.getIdToken()
-          .then((res) => {
+          .then((res: any) => {
             this.token = res;
             this.cookie.set('token', this.token);
           });
@@ -41,9 +41,9 @@ export class ShoppingListService {
     firebase
       .auth()
       .createUserWithEmailAndPassword(email, password)
-      .then((res) => {
-        res.user?.getIdToken().then((res) => {
-          this.token = res;
+      .then((res: any) => {
+        res.user?.getIdToken().then((token: any) => {
+          this.token = token;
           this.cookie.set('token', this.token);
         });
       });
@@ -57,13 +57,13 @@ export class ShoppingListService {
         list
       )
       .subscribe(
-        (res) => {},
-        (err) => {}
+        (res: any) => {},
+        (err: any) => {}
       );
   }
 
   // putList(index: number, list: any) {
-    putList( list: any) {
+  putList(list: any) {
     let token = this.getToken();
     this.httpClient
       .put(
@@ -72,8 +72,8 @@ export class ShoppingListService {
         list
       )
       .subscribe(
-        (res) => {},
-        (err) => {}
+        (res: any) => {},
+        (err: any) => {}
       );
   }
 
@@ -84,23 +84,28 @@ export class ShoppingListService {
         `https://shopping-list-d9b5e-default-rtdb.firebaseio.com/shopping-list/${index}.json?auth=${token}`
       )
       .subscribe(
-        (res) => {},
-        (err) => {}
+        (res: any) => {},
+        (err: any) => {}
       );
   }
 
   lists: any = [];
-  getList() {
+  getList(): Observable<any> {
     let token = this.getToken();
-    this.httpClient
+    return this.httpClient
       .get(
         `https://shopping-list-d9b5e-default-rtdb.firebaseio.com/shopping-list.json?auth=${token}`
       )
-      .subscribe((res) => {
-        console.log('res', res);
-        this.lists = res;
-        return res;
-      });
+      .pipe(
+        tap((res: any) => {
+          this.lists = res;
+          return this.lists;
+        })
+      );
+  }
+
+  getLists() {
+    return this.lists;
   }
 
   getLists2() {
@@ -111,7 +116,7 @@ export class ShoppingListService {
     firebase
       .auth()
       .signOut()
-      .then(() => {
+      .then((res: any) => {
         this.token = '';
         this.cookie.set('token', this.token);
         window.location.reload();
