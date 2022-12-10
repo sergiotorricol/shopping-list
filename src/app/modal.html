@@ -1,0 +1,123 @@
+<!-- LOG OUT MODAL -->
+<ng-container
+  *ngIf="data.type=='LOG_OUT'||data.type=='DELETE_LIST'||data.type=='DELETE_ITEM'"
+>
+  <ng-container *ngIf="data.type=='LOG_OUT'">
+    <h1 mat-dialog-title style="text-align: center">¿Está seguro de salir?</h1>
+  </ng-container>
+  <ng-container *ngIf="data.type=='DELETE_LIST'||data.type=='DELETE_ITEM'">
+    <h1 mat-dialog-title style="text-align: center">¿Está seguro de borrar?</h1>
+  </ng-container>
+  <div mat-dialog-actions style="display: flex; justify-content: space-evenly">
+    <button mat-raised-button color="danger" (click)="onNoClick()">No</button>
+    <button mat-raised-button color="primary" (click)="onYesClick()">Si</button>
+  </div>
+</ng-container>
+<!-- LOG OUT MODAL -->
+
+<!-- LIST MODAL -->
+<ng-container *ngIf="data.type=='NEW_LIST'||data.type=='EDIT_LIST'">
+  <h1 mat-dialog-title style="text-align: center">Nueva Lista</h1>
+  <div mat-dialog-content>
+    <form [formGroup]="formList">
+      <mat-form-field appearance="fill" style="width: 100%">
+        <mat-label>Nombre:</mat-label>
+        <input
+          matInput
+          formControlName="name"
+          (keypress)="newListEnter($event)"
+        />
+      </mat-form-field>
+      <mat-form-field appearance="fill" style="width: 100%">
+        <mat-label>Mercado:</mat-label>
+        <input
+          matInput
+          formControlName="market"
+          (keypress)="newListEnter($event)"
+        />
+      </mat-form-field>
+    </form>
+  </div>
+  <div mat-dialog-actions style="display: flex; justify-content: space-evenly">
+    <!-- <div
+      mat-dialog-actions
+      style="display: flex; justify-content: space-evenly"
+    >
+      <button mat-raised-button color="danger" (click)="onNoClick()">
+        Cancelar
+      </button>
+      <button mat-raised-button color="primary" (click)="onYesClick()">
+        Guardar
+      </button>
+    </div> -->
+
+    <button mat-raised-button color="danger" (click)="onNoClick()">Cancelar</button>
+    <button mat-raised-button color="primary" (click)="onYesClick()">Guardar</button>
+  </div>
+</ng-container>
+<!-- LIST MODAL END-->
+
+<!-- ITEM MODAL -->
+<ng-container *ngIf="data.type=='NEW_ITEM'||data.type=='EDIT_ITEM'">
+  <h1 mat-dialog-title style="text-align: center">Nuevo Item</h1>
+  <div mat-dialog-content>
+    <form [formGroup]="formItem">
+      <mat-form-field appearance="fill" style="width: 100%">
+        <mat-label>Nombre:</mat-label>
+        <input
+          matInput
+          formControlName="name"
+          (keypress)="newListEnter($event)"
+        />
+      </mat-form-field>
+      <!-- <ng-container *ngIf="data.price"> -->
+      <mat-form-field appearance="fill" style="width: 100%">
+        <mat-label>Precio:</mat-label>
+        <input
+          matInput
+          formControlName="price"
+          (keypress)="newListEnter($event)"
+        />
+      </mat-form-field>
+      <!-- </ng-container> -->
+    </form>
+  </div>
+  <div mat-dialog-actions style="display: flex; justify-content: space-evenly">
+    <button mat-raised-button color="danger" (click)="onNoClick()">
+      Cancelar
+    </button>
+    <button mat-raised-button color="primary" (click)="onYesClick()">
+      Guardar
+    </button>
+  </div>
+</ng-container>
+<!-- ITEM MODAL END -->
+
+<!-- COMPARE MODAL -->
+<ng-container *ngIf="data.type=='COMPARE'">
+  <h1 mat-dialog-title style="text-align: center">
+    <strong>{{data.name}}</strong>
+  </h1>
+  <div mat-dialog-content>
+    <div style="width: 100%">
+      <ion-list lines="full" class="ion-no-padding" position="floating">
+        <ion-item>
+          <ion-label><b>Mercado</b></ion-label>
+          <ion-label><b>Precio</b></ion-label>
+        </ion-item>
+        <ng-container *ngFor="let item of data.compare; index as i">
+          <ion-item-sliding class="one">
+            <ion-item>
+              <ion-label>{{ item.market }}</ion-label>
+              <ion-label>{{ item.price }}</ion-label>
+            </ion-item>
+          </ion-item-sliding>
+        </ng-container>
+      </ion-list>
+    </div>
+  </div>
+  <div mat-dialog-actions style="display: flex; justify-content: space-evenly">
+    <button mat-raised-button color="primary" (click)="onNoClick()">OK</button>
+  </div>
+</ng-container>
+<!-- COMPARE MODAL -->
