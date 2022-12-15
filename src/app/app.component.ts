@@ -32,6 +32,8 @@ export class AppComponent implements OnInit, OnDestroy {
   currentList: any;
   currentUser: string = '';
   empty: boolean = true;
+  equivocado: boolean = false;
+  existente: boolean = false;
   formLogin: FormGroup;
   itemsCompare: any = [];
   lists: any = [];
@@ -40,6 +42,7 @@ export class AppComponent implements OnInit, OnDestroy {
     { value: '1', viewValue: 'Normal' },
     { value: '2', viewValue: 'Precios' },
   ];
+  othersLists: any = [];
   prices = false;
   selected = '';
   token: string = '';
@@ -69,10 +72,6 @@ export class AppComponent implements OnInit, OnDestroy {
       apiKey: 'AIzaSyBHQVuQM353vYWb3w7_ZQLBagrfJJ9TqgQ',
       authDomain: 'shopping-list-d9b5e.firebaseapp.com',
     });
-    // if (this.token != '') {
-    //   this.getList();
-    // }
-
     this.getToken();
     if (this.token != '' && this.token != null && this.currentUser != null) {
       this.logged = true;
@@ -90,8 +89,8 @@ export class AppComponent implements OnInit, OnDestroy {
   getToken() {
     this.currentUser = localStorage.getItem('upbUser')!;
     this.token = localStorage.getItem('token')!;
-    console.log('asd', this.token);
   }
+
   login() {
     if (this.formLogin.valid) {
       this._shoppingListService.login(
@@ -100,7 +99,7 @@ export class AppComponent implements OnInit, OnDestroy {
       );
       setTimeout(() => {
         this.token = this._shoppingListService.getToken();
-        console.log(this.token);
+
         if (this.token != '') {
           this.logged = true;
           this.equivocado = false;
@@ -118,9 +117,14 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  existente: boolean = false;
-  equivocado: boolean = false;
   signup() {
+    this.empty = true;
+    localStorage.removeItem('upbToken');
+    localStorage.removeItem('upbUser');
+    this.currentUser = '';
+    this.token = '';
+    this.lists = [];
+    this.othersLists = [];
     if (this.formLogin.valid) {
       this._shoppingListService.signUp(
         this.formLogin.controls['email'].value,
@@ -128,12 +132,12 @@ export class AppComponent implements OnInit, OnDestroy {
       );
       setTimeout(() => {
         this.token = this._shoppingListService.getToken();
-        console.log(this.token);
         if (this.token != '') {
           this.logged = true;
           this.existente = false;
           this.currentUser = this.formLogin.controls['email'].value;
           localStorage.setItem('upbToken', this.token);
+          localStorage.setItem('upbUser ', this.currentUser);
         } else {
           this.existente = true;
           this.formLogin.markAllAsTouched();
@@ -144,14 +148,7 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  ngOnDestroy() {
-    // localStorage.setItem('upbToken', this.token);
-    // this.logged = false;
-    // this.token = '';
-    // this.logout();
-  }
-
-  othersLists: any = [];
+  ngOnDestroy() {}
 
   getList() {
     this._shoppingListService.getList().subscribe((res: any) => {
@@ -167,12 +164,10 @@ export class AppComponent implements OnInit, OnDestroy {
         });
         if (this.lists.length > 0) {
           this.empty = false;
-          console.log('das', this.lists);
           this.currentList = 0;
           this.currentId = this.lists[0].id;
           this.currentList = this.lists[0];
         }
-        // console.log('xsa',this.currentList);
       } else {
         this.lists = res;
       }
@@ -225,13 +220,6 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   deleteList(index: number) {
-    // let index;
-    // for (let i = 0; i < this.lists.length; i++) {
-    //   if (this.lists[i].id == id) {
-    //     index = i;
-    //     break;
-    //   }
-    // }
     this.lists.splice(index, 1);
     let concatList = this.lists.concat(this.othersLists);
     this._shoppingListService.putList(concatList);
@@ -258,15 +246,12 @@ export class AppComponent implements OnInit, OnDestroy {
         if (a.market < b.market) return -1;
         return 0;
       });
-
       this.itemsCompare = this.itemsCompare.sort((a: any, b: any) => {
         if (a.date > b.date) return 1;
         if (a.date < b.date) return -1;
         return 0;
       });
-
       this.itemsCompare = this.itemsCompare.reverse();
-
       let itemsTemp: any = [this.itemsCompare[0]];
       let marketTemp = this.itemsCompare[0].market;
       this.itemsCompare.forEach((item: any) => {
@@ -275,13 +260,11 @@ export class AppComponent implements OnInit, OnDestroy {
           marketTemp = item.market;
         }
       });
-
       this.itemsCompare = itemsTemp.sort((a: any, b: any) => {
         if (a.price > b.price) return 1;
         if (a.price < b.price) return -1;
         return 0;
       });
-
       data = {
         type: type,
         name: this.currentList.items[index].name,
@@ -290,14 +273,6 @@ export class AppComponent implements OnInit, OnDestroy {
     } else if (type == 'NEW_LIST') {
       data = { type: type };
     } else if (type == 'EDIT_LIST') {
-      // let index: number;
-      // for (let i = 0; i < this.lists.length; i++) {
-      //   if (this.lists[i].id == id) {
-      //     index = i;
-      //     break;
-      //   }
-      // }
-      // console.log(index!);
       data = {
         market: this.lists[index].market,
         name: this.lists[index].name,
@@ -316,7 +291,6 @@ export class AppComponent implements OnInit, OnDestroy {
     } else if (type == 'DELETE_ITEM') {
       data = { type: type };
     }
-
     const dialogRef = this.dialog.open(DialogOverviewExampleDialog, {
       width: '300px',
       data: data,
@@ -324,12 +298,6 @@ export class AppComponent implements OnInit, OnDestroy {
     });
 
     dialogRef.afterClosed().subscribe((result) => {
-      // if (type == 'NEW_LIST') {
-      //   if (this.lists.length > 0) {
-      //     console.log('mayor a 0');
-      //     type = 'EDIT_LIST';
-      //   }
-      // }
       if (type == 'LOG_OUT') {
         if (result) {
           this.logged = false;
@@ -357,18 +325,9 @@ export class AppComponent implements OnInit, OnDestroy {
         if (this.lists.length > 0) {
           this.empty = false;
           this.currentList = this.lists[this.lists.length - 1];
-
-          // this.currentIndex = this.lists.length - 1;
         }
       } else if (type == 'EDIT_LIST') {
         if (result != undefined && result != false) {
-          // let index: number;
-          // for (let i = 0; i < this.lists.length; i++) {
-          //   if (this.lists[i].id == id) {
-          //     index = i;
-          //     break;
-          //   }
-          // }
           this.lists[index].name = result.name;
           this.lists[index].market = result.market;
           let concatList = this.lists.concat(this.othersLists);
@@ -377,10 +336,6 @@ export class AppComponent implements OnInit, OnDestroy {
         }
       } else if (type == 'DELETE_LIST') {
         if (result) {
-          // if (this.currentIndex == index) {
-          //   this.empty = true;
-          // }
-          // this._shoppingListService.deleteList(index);
           this._shoppingListService.postList(this.lists);
         }
         if (this.lists.length <= 0) {
@@ -417,7 +372,6 @@ export class AppComponent implements OnInit, OnDestroy {
         }
       } else if (type == 'DELETE_ITEM') {
         if (result) {
-          // this.lists[this.currentIndex].items.splice(index, 1);
         }
       }
     });
@@ -425,7 +379,6 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   deleteItem(index: number) {
-    // this.undoList.push(this.lists[this.currentIndex].items[index]);
     this.lists[this.currentIndex].items.splice(index, 1);
     let concatList = this.lists.concat(this.othersLists);
     this._shoppingListService.putList(concatList);
@@ -436,9 +389,9 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   logout() {
-    console.log('logout');
-
     this.logged = false;
+    this.existente = false;
+    this.equivocado = false;
     this.currentUser = '';
     localStorage.removeItem('upbToken');
     localStorage.removeItem('upbUser');
@@ -448,13 +401,6 @@ export class AppComponent implements OnInit, OnDestroy {
 
   selectList(index: number) {
     this.empty = false;
-    // let index: number;
-    // for (let i = 0; i < this.lists.length; i++) {
-    //   if (this.lists[i].id == id) {
-    //     index = i;
-    //     break;
-    //   }
-    // }
     this.currentIndex = index;
     this.currentId = this.lists[index].id;
     this.currentList = this.lists[index];
