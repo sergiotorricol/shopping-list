@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit, ViewChild } from '@angular/core';
+import { Component, Inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import {
   MatDialog,
@@ -23,7 +23,7 @@ export interface ShoppingList {
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
   @ViewChild('drawer') drawer: MatDrawer;
   @ViewChild('listsList') listsList: IonList;
 
@@ -65,25 +65,33 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit() {
-    setTimeout(() => {
-      console.clear();
-    }, 1000);
     firebase.initializeApp({
       apiKey: 'AIzaSyBHQVuQM353vYWb3w7_ZQLBagrfJJ9TqgQ',
       authDomain: 'shopping-list-d9b5e.firebaseapp.com',
     });
-    if (this.token != '') {
+    // if (this.token != '') {
+    //   this.getList();
+    // }
+
+    this.getToken();
+    if (this.token != '' && this.token != null && this.currentUser != null) {
+      this.logged = true;
       this.getList();
     }
     setTimeout(() => {
       if (this.lists.length > 0) {
         this.empty = false;
-        // this.currentIndex = 0;
-        // this.currentList = this.lists[this.currentIndex];
+        this.currentIndex = 0;
+        this.currentList = this.lists[this.currentIndex];
       }
-    }, 1500);
+    }, 2000);
   }
 
+  getToken() {
+    this.currentUser = localStorage.getItem('upbUser')!;
+    this.token = localStorage.getItem('token')!;
+    console.log('asd', this.token);
+  }
   login() {
     if (this.formLogin.valid) {
       this._shoppingListService.login(
@@ -92,21 +100,26 @@ export class AppComponent implements OnInit {
       );
       setTimeout(() => {
         this.token = this._shoppingListService.getToken();
+        console.log(this.token);
         if (this.token != '') {
           this.logged = true;
+          this.equivocado = false;
           this.currentUser = this.formLogin.controls['email'].value;
           this.getList();
+          localStorage.setItem('upbUser', this.currentUser);
           localStorage.setItem('upbToken', this.token);
         } else {
+          this.equivocado = true;
           this.formLogin.markAllAsTouched();
         }
-      }, 1500);
+      }, 2000);
     } else {
       this.formLogin.markAllAsTouched();
     }
   }
 
   existente: boolean = false;
+  equivocado: boolean = false;
   signup() {
     if (this.formLogin.valid) {
       this._shoppingListService.signUp(
@@ -115,20 +128,27 @@ export class AppComponent implements OnInit {
       );
       setTimeout(() => {
         this.token = this._shoppingListService.getToken();
+        console.log(this.token);
         if (this.token != '') {
           this.logged = true;
           this.existente = false;
           this.currentUser = this.formLogin.controls['email'].value;
-
           localStorage.setItem('upbToken', this.token);
         } else {
           this.existente = true;
           this.formLogin.markAllAsTouched();
         }
-      }, 1500);
+      }, 2000);
     } else {
       this.formLogin.markAllAsTouched();
     }
+  }
+
+  ngOnDestroy() {
+    // localStorage.setItem('upbToken', this.token);
+    // this.logged = false;
+    // this.token = '';
+    // this.logout();
   }
 
   othersLists: any = [];
@@ -160,7 +180,7 @@ export class AppComponent implements OnInit {
   }
 
   loginGoogle() {
-    console.log('Google');
+    this._shoppingListService.googleAuthentication();
   }
 
   check(index: number) {
@@ -177,7 +197,9 @@ export class AppComponent implements OnInit {
   }
 
   print() {
-    console.log('PRINT', this.lists);
+    console.log('PRINT');
+    console.log('USER', this.currentUser);
+    console.log('LIST', this.lists);
   }
 
   undo() {
@@ -414,11 +436,14 @@ export class AppComponent implements OnInit {
   }
 
   logout() {
+    console.log('logout');
+
     this.logged = false;
-    this._shoppingListService.logout();
     this.currentUser = '';
     localStorage.removeItem('upbToken');
+    localStorage.removeItem('upbUser');
     this.formLogin.reset();
+    this._shoppingListService.logout();
   }
 
   selectList(index: number) {

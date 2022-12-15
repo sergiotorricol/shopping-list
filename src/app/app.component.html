@@ -34,6 +34,11 @@
   <ng-container *ngIf="existente">
     <span style="color: red; padding-left: 27%">Correo ya registrado</span>
   </ng-container>
+  <ng-container *ngIf="equivocado">
+    <span style="color: red; padding-left: 27%"
+      >Correo o contraseña incorrectos</span
+    >
+  </ng-container>
   <div
     style="
       display: flex;

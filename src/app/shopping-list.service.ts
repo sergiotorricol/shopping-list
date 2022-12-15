@@ -18,6 +18,50 @@ export class ShoppingListService {
   ) {}
   token: string = '';
 
+  googleAuthentication() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    firebase
+      .auth()
+      .signInWithPopup(provider)
+      .then((res: any) => {
+        console.log('resABCDEF', res.additionalUserInfo.profile.email);
+        console.log('resABCDEF', res.additionalUserInfo.profile);
+        this.getGoogle();
+      });
+  }
+
+  getGoogle() {
+    firebase
+      .auth()
+      .getRedirectResult()
+      .then((res: any) => {
+        console.log('resAB', res);
+        localStorage.setItem('resGoogle', res);
+        if (res.credential) {
+          /** @type {firebase.auth.OAuthCredential} */
+          var credential = res.credential;
+          // This gives you a Google Access Token. You can use it to access the Google API.
+          var token = credential.accessToken;
+          // ...
+          console.log('credential', credential);
+          console.log('token', token);
+        }
+        // The signed-in user info.
+        var user = res.user;
+      })
+      .catch((error) => {
+        console.log('error', error);
+        // Handle Errors here.
+        var errorCode = error.code;
+        var errorMessage = error.message;
+        // The email of the user's account used.
+        var email = error.email;
+        // The firebase.auth.AuthCredential type that was used.
+        var credential = error.credential;
+        // ...
+      });
+  }
+
   login(email: string, password: string) {
     firebase
       .auth()
@@ -29,7 +73,26 @@ export class ShoppingListService {
           .then((res: any) => {
             this.token = res;
             this.cookie.set('token', this.token);
+          })
+          .catch((err: any) => {
+            console.log('erer', err);
+
+            this.error = err;
+            console.log('err', this.error);
+            this.token = '';
+            this.cookie.set('token', this.token);
           });
+      })
+      .catch((err: any) => {
+        console.log('erer', err);
+        this.error = err;
+        console.log('err', this.error);
+        this.token = '';
+        this.cookie.set('token', this.token);
+        // this.error = err;
+        // console.log('err', this.error);
+        // this.token = '';
+        // this.cookie.set('token', this.token);
       });
   }
 
@@ -37,15 +100,23 @@ export class ShoppingListService {
     return this.cookie.get('token');
   }
 
+  error: string = '';
   signUp(email: string, password: string) {
     firebase
       .auth()
       .createUserWithEmailAndPassword(email, password)
       .then((res: any) => {
+        console.log('res ENTER');
         res.user?.getIdToken().then((token: any) => {
           this.token = token;
           this.cookie.set('token', this.token);
         });
+      })
+      .catch((err: any) => {
+        this.error = err;
+        console.log('err', this.error);
+        this.token = '';
+        this.cookie.set('token', this.token);
       });
   }
 
@@ -119,7 +190,8 @@ export class ShoppingListService {
       .then((res: any) => {
         this.token = '';
         this.cookie.set('token', this.token);
-        window.location.reload();
+        localStorage.removeItem('upbToken');
+        // window.location.reload();
       });
   }
 }
