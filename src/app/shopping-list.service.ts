@@ -21,6 +21,15 @@ export class ShoppingListService {
       .auth()
       .signInWithPopup(provider)
       .then((res: any) => {
+        console.log('res', res);
+        localStorage.removeItem('upbUser');
+        localStorage.setItem('upbUser', res.user.multiFactor.user.email);
+        localStorage.removeItem('upbToken');
+        localStorage.setItem('upbToken', res.user.multiFactor.user.accessToken);
+        this.token = res.user.multiFactor.user.accessToken;
+        this.cookie.set('token', this.token);
+        console.log(res.user.multiFactor.user.accessToken);
+
         this.getGoogle();
       });
   }
@@ -30,7 +39,7 @@ export class ShoppingListService {
       .auth()
       .getRedirectResult()
       .then((res: any) => {
-        localStorage.setItem('resGoogle', res);
+        window.location.reload();
         if (res.credential) {
           /** @type {firebase.auth.OAuthCredential} */
           var credential = res.credential;
@@ -40,16 +49,6 @@ export class ShoppingListService {
         }
         // The signed-in user info.
         var user = res.user;
-      })
-      .catch((error) => {
-        // Handle Errors here.
-        var errorCode = error.code;
-        var errorMessage = error.message;
-        // The email of the user's account used.
-        var email = error.email;
-        // The firebase.auth.AuthCredential type that was used.
-        var credential = error.credential;
-        // ...
       });
   }
 

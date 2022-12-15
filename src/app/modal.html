@@ -51,8 +51,12 @@
       </button>
     </div> -->
 
-    <button mat-raised-button color="danger" (click)="onNoClick()">Cancelar</button>
-    <button mat-raised-button color="primary" (click)="onYesClick()">Guardar</button>
+    <button mat-raised-button color="danger" (click)="onNoClick()">
+      Cancelar
+    </button>
+    <button mat-raised-button color="primary" (click)="onYesClick()">
+      Guardar
+    </button>
   </div>
 </ng-container>
 <!-- LIST MODAL END-->
@@ -120,4 +124,34 @@
     <button mat-raised-button color="primary" (click)="onNoClick()">OK</button>
   </div>
 </ng-container>
-<!-- COMPARE MODAL -->
+<!-- COMPARE MODAL END -->
+
+<!-- SHARE MODAL -->
+<ng-container *ngIf="data.type=='SHARE'">
+  <h1 mat-dialog-title style="text-align: center">
+    <strong>Compartir</strong>
+  </h1>
+  <div mat-dialog-content>
+    <div style="width: 100%">
+      <form [formGroup]="formShare">
+        <mat-form-field appearance="fill" style="width: 100%">
+          <mat-label>Compartir con:</mat-label>
+          <input
+            matInput
+            formControlName="email"
+            (keypress)="shareEnter($event)"
+          />
+        </mat-form-field>
+      </form>
+    </div>
+  </div>
+  <div mat-dialog-actions style="display: flex; justify-content: space-evenly">
+    <button mat-raised-button color="danger" (click)="onNoClick()">
+      Cancelar
+    </button>
+    <button mat-raised-button color="primary" (click)="onYesClick()">
+      Compartir
+    </button>
+  </div>
+</ng-container>
+<!-- SHARE MODAL END -->

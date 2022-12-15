@@ -68,6 +68,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    console.log('INIT');
     firebase.initializeApp({
       apiKey: 'AIzaSyBHQVuQM353vYWb3w7_ZQLBagrfJJ9TqgQ',
       authDomain: 'shopping-list-d9b5e.firebaseapp.com',
@@ -75,7 +76,9 @@ export class AppComponent implements OnInit, OnDestroy {
     this.getToken();
     if (this.token != '' && this.token != null && this.currentUser != null) {
       this.logged = true;
-      this.getList();
+      setTimeout(() => {
+        this.getList();
+      }, 1000);
     }
     setTimeout(() => {
       if (this.lists.length > 0) {
@@ -88,7 +91,8 @@ export class AppComponent implements OnInit, OnDestroy {
 
   getToken() {
     this.currentUser = localStorage.getItem('upbUser')!;
-    this.token = localStorage.getItem('token')!;
+    this.token = localStorage.getItem('upbToken')!;
+    console.log('token', this.token);
   }
 
   login() {
@@ -99,13 +103,14 @@ export class AppComponent implements OnInit, OnDestroy {
       );
       setTimeout(() => {
         this.token = this._shoppingListService.getToken();
-
         if (this.token != '') {
           this.logged = true;
           this.equivocado = false;
           this.currentUser = this.formLogin.controls['email'].value;
           this.getList();
+          localStorage.removeItem('upbUser');
           localStorage.setItem('upbUser', this.currentUser);
+          localStorage.removeItem('upbToken');
           localStorage.setItem('upbToken', this.token);
         } else {
           this.equivocado = true;
@@ -136,8 +141,10 @@ export class AppComponent implements OnInit, OnDestroy {
           this.logged = true;
           this.existente = false;
           this.currentUser = this.formLogin.controls['email'].value;
+          localStorage.removeItem('upbToken');
           localStorage.setItem('upbToken', this.token);
-          localStorage.setItem('upbUser ', this.currentUser);
+          localStorage.removeItem('upbUser');
+          localStorage.setItem('upbUser', this.currentUser);
         } else {
           this.existente = true;
           this.formLogin.markAllAsTouched();
@@ -198,17 +205,20 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   undo() {
-    // let x = new Date();
-    // if (this.undoList.length > 0) {
-    //   this.lists[this.currentIndex].items.push(this.undoList[0]);
-    //   this.undoList.splice(0, 1);
-    // }
-    // this.lists[this.currentIndex].items.forEach((item: any, index: number) => {
-    //   if (item.checked) {
-    //     this.lists[this.currentIndex].items.splice(index, 1);
-    //     this.lists[this.currentIndex].items.push(item);
-    //   }
-    // });
+    if (this.undoList.length > 0) {
+      this.lists[this.currentIndex].items.push(this.undoList[0]);
+      this.undoList.splice(0, 1);
+      // let concatList = this.lists.concat(this.othersLists);
+      // this._shoppingListService.putList(concatList);
+    }
+    this.lists[this.currentIndex].items.forEach((item: any, index: number) => {
+      if (item.checked) {
+        this.lists[this.currentIndex].items.splice(index, 1);
+        this.lists[this.currentIndex].items.push(item);
+      }
+    });
+    let concatList = this.lists.concat(this.othersLists);
+    this._shoppingListService.putList(concatList);
   }
 
   change() {
@@ -272,6 +282,8 @@ export class AppComponent implements OnInit, OnDestroy {
       };
     } else if (type == 'NEW_LIST') {
       data = { type: type };
+    } else if (type == 'SHARE') {
+      data = { type: type };
     } else if (type == 'EDIT_LIST') {
       data = {
         market: this.lists[index].market,
@@ -334,6 +346,13 @@ export class AppComponent implements OnInit, OnDestroy {
           this._shoppingListService.putList(concatList);
           this.drawer.close();
         }
+      } else if (type == 'SHARE') {
+        if (result) {
+          this.lists[this.currentIndex].users.push(result.email);
+          let concatList = this.lists.concat(this.othersLists);
+          console.log('concat', concatList);
+          // this._shoppingListService.putList(concatList);
+        }
       } else if (type == 'DELETE_LIST') {
         if (result) {
           this._shoppingListService.postList(this.lists);
@@ -379,6 +398,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   deleteItem(index: number) {
+    this.undoList.push(this.lists[this.currentIndex].items[index]);
     this.lists[this.currentIndex].items.splice(index, 1);
     let concatList = this.lists.concat(this.othersLists);
     this._shoppingListService.putList(concatList);
@@ -416,6 +436,7 @@ export class AppComponent implements OnInit, OnDestroy {
 export class DialogOverviewExampleDialog {
   formItem: FormGroup;
   formList: FormGroup;
+  formShare: FormGroup;
   market: boolean = false;
   price: boolean = false;
 
@@ -433,6 +454,16 @@ export class DialogOverviewExampleDialog {
       name: ['', [Validators.required]],
       price: ['', []],
       id: ['', []],
+    });
+    this.formShare = this._fb.group({
+      email: [
+        '',
+        [
+          Validators.pattern(
+            /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+          ),
+        ],
+      ],
     });
     if (data.type == 'EDIT_LIST') {
       this.formList.controls['name'].setValue(data.name);
@@ -460,6 +491,15 @@ export class DialogOverviewExampleDialog {
         this.dialogRef.close(list);
       } else {
         this.formList.markAllAsTouched();
+      }
+    } else if (this.data.type == 'SHARE') {
+      if (this.formShare.valid) {
+        let share = {
+          email: this.formShare.controls['email'].value,
+        };
+        this.dialogRef.close(share);
+      } else {
+        this.formShare.markAllAsTouched;
       }
     } else if (this.data.type == 'EDIT_LIST') {
       let list = {
@@ -491,6 +531,12 @@ export class DialogOverviewExampleDialog {
   }
 
   newListEnter(event: any) {
+    if (event.code == 'Enter') {
+      this.onYesClick();
+    }
+  }
+
+  shareEnter(event: any) {
     if (event.code == 'Enter') {
       this.onYesClick();
     }
