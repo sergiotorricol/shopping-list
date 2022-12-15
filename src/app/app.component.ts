@@ -159,24 +159,32 @@ export class AppComponent implements OnInit, OnDestroy {
 
   getList() {
     this._shoppingListService.getList().subscribe((res: any) => {
-      if (res.length > 0) {
-        res.forEach((list: any) => {
-          list.users.forEach((user: any) => {
-            if (user == this.currentUser) {
-              this.lists.push(list);
-            } else {
-              this.othersLists.push(list);
-            }
+      console.log(res);
+      if (res != null) {
+        if (res.length > 0) {
+          res.forEach((list: any) => {
+            list.users.forEach((user: any) => {
+              this.lists = [];
+              this.othersLists = [];
+              if (user == this.currentUser) {
+                this.lists.push(list);
+              } else {
+                this.othersLists.push(list);
+              }
+            });
           });
-        });
-        if (this.lists.length > 0) {
-          this.empty = false;
-          this.currentList = 0;
-          this.currentId = this.lists[0].id;
-          this.currentList = this.lists[0];
+          if (this.lists.length > 0) {
+            this.empty = false;
+            this.currentList = 0;
+            this.currentId = this.lists[0].id;
+            this.currentList = this.lists[0];
+          }
+        } else {
+          this.lists = res;
         }
       } else {
-        this.lists = res;
+        this.lists = [];
+        this.othersLists = [];
       }
     });
   }
@@ -351,7 +359,7 @@ export class AppComponent implements OnInit, OnDestroy {
           this.lists[this.currentIndex].users.push(result.email);
           let concatList = this.lists.concat(this.othersLists);
           console.log('concat', concatList);
-          // this._shoppingListService.putList(concatList);
+          this._shoppingListService.putList(concatList);
         }
       } else if (type == 'DELETE_LIST') {
         if (result) {
@@ -409,6 +417,8 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   logout() {
+    this.lists = [];
+    this.othersLists = [];
     this.logged = false;
     this.existente = false;
     this.equivocado = false;
