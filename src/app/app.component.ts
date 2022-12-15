@@ -159,13 +159,12 @@ export class AppComponent implements OnInit, OnDestroy {
 
   getList() {
     this._shoppingListService.getList().subscribe((res: any) => {
-      console.log(res);
+      this.lists = [];
+      this.othersLists = [];
       if (res != null) {
         if (res.length > 0) {
           res.forEach((list: any) => {
             list.users.forEach((user: any) => {
-              this.lists = [];
-              this.othersLists = [];
               if (user == this.currentUser) {
                 this.lists.push(list);
               } else {
@@ -357,9 +356,12 @@ export class AppComponent implements OnInit, OnDestroy {
       } else if (type == 'SHARE') {
         if (result) {
           this.lists[this.currentIndex].users.push(result.email);
+
           let concatList = this.lists.concat(this.othersLists);
-          console.log('concat', concatList);
-          this._shoppingListService.putList(concatList);
+
+          console.log('concat', this.lists.length, concatList.length);
+          // concatList = [];
+          // this._shoppingListService.putList(concatList);
         }
       } else if (type == 'DELETE_LIST') {
         if (result) {
