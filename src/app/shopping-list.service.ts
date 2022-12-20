@@ -17,20 +17,51 @@ export class ShoppingListService {
 
   googleAuthentication() {
     const provider = new firebase.auth.GoogleAuthProvider();
-    firebase
-      .auth()
-      .signInWithPopup(provider)
-      .then((res: any) => {
-        console.log('res', res);
-        localStorage.removeItem('upbUser');
-        localStorage.setItem('upbUser', res.user.multiFactor.user.email);
-        localStorage.removeItem('upbToken');
-        localStorage.setItem('upbToken', res.user.multiFactor.user.accessToken);
-        this.token = res.user.multiFactor.user.accessToken;
-        this.cookie.set('token', this.token);
-        console.log(res.user.multiFactor.user.accessToken);
+    //     Move the getRedirectResult() call out of your loginGoogle() function. getRedirectResult() should be called on page load. An example of this in action can be found here:
 
-        this.getGoogle();
+    // https://github.com/firebase/quickstart-js/blob/master/auth/google-redirect.html
+    firebase.auth().signInWithRedirect(provider);
+    setTimeout(() => {
+      // firebase
+      //   .auth()
+      //   .getRedirectResult()
+      //   .then((result: any) => {
+      //     console.log('AAAAAAAAAAAAAAAAAAAAAAAAA');
+      //     if (result.credential) {
+      //     }
+      //     var user = result.user;
+      //   });
+    }, 5000);
+
+    // .then((res: any) => {
+    //   console.log('res', res);
+    //   localStorage.removeItem('upbUser');
+    //   localStorage.setItem('upbUser', res.user.multiFactor.user.email);
+    //   localStorage.removeItem('upbToken');
+    //   localStorage.setItem('upbToken', res.user.multiFactor.user.accessToken);
+    //   this.token = res.user.multiFactor.user.accessToken;
+    //   this.cookie.set('token', this.token);
+    //   console.log(res.user.multiFactor.user.accessToken);
+
+    //   this.getGoogle();
+    // });
+  }
+
+  initApp() {
+    return firebase
+      .auth()
+      .getRedirectResult()
+      .then((result: any) => {
+        console.log('yyyy', result);
+        if (result.credential) {
+          this.token = result.credential.accessToken;
+          this.cookie.set('token', this.token);
+          localStorage.removeItem('upbUser');
+          localStorage.setItem(
+            'upbUser',
+            result.additionalUserInfo.profile.email
+          );
+        }
       });
   }
 
@@ -39,6 +70,8 @@ export class ShoppingListService {
       .auth()
       .getRedirectResult()
       .then((res: any) => {
+        console.log('res2');
+
         window.location.reload();
         if (res.credential) {
           /** @type {firebase.auth.OAuthCredential} */

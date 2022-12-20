@@ -73,13 +73,25 @@ export class AppComponent implements OnInit, OnDestroy {
       apiKey: 'AIzaSyBHQVuQM353vYWb3w7_ZQLBagrfJJ9TqgQ',
       authDomain: 'shopping-list-d9b5e.firebaseapp.com',
     });
-    this.getToken();
-    if (this.token != '' && this.token != null && this.currentUser != null) {
-      this.logged = true;
-      setTimeout(() => {
-        this.getList();
-      }, 1000);
-    }
+    window.onload = (_: any) => {
+      this._shoppingListService.initApp().then((res: any) => {
+        console.log('res', res);
+
+        this.currentUser = localStorage.getItem('upbUser')!;
+        this.token = this._shoppingListService.getToken();
+        console.log('x', this.currentUser, this.token);
+        if (this.token != '' && this.token != null && this.currentUser != null) {
+          console.log('asd');
+          
+          this.logged = true;
+          setTimeout(() => {
+            this.getList();
+          }, 1000);
+        }
+      });
+      
+    };
+    
     setTimeout(() => {
       if (this.lists.length > 0) {
         this.empty = false;
