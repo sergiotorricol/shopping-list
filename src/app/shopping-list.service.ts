@@ -54,7 +54,9 @@ export class ShoppingListService {
       .then((result: any) => {
         console.log('yyyy', result);
         if (result.credential) {
-          this.token = result.credential.accessToken;
+          // this.token = result.credential.accessToken;
+          // this.token = result.credential.idToken;
+          this.token = result.user.multiFactor.user.accessToken;
           this.cookie.set('token', this.token);
           localStorage.removeItem('upbUser');
           localStorage.setItem(
@@ -171,6 +173,8 @@ export class ShoppingListService {
 
   getList(): Observable<any> {
     let token = this.getToken();
+    console.log('LIST TOKEN', token);
+
     return this.httpClient
       .get(
         `https://shopping-list-d9b5e-default-rtdb.firebaseio.com/shopping-list.json?auth=${token}`

@@ -80,23 +80,27 @@ export class AppComponent implements OnInit, OnDestroy {
         this.currentUser = localStorage.getItem('upbUser')!;
         this.token = this._shoppingListService.getToken();
         console.log('x', this.currentUser, this.token);
-        if (this.token != '' && this.token != null && this.currentUser != null) {
+        if (
+          this.token != '' &&
+          this.token != null &&
+          this.currentUser != null
+        ) {
           console.log('asd');
-          
+
           this.logged = true;
           setTimeout(() => {
             this.getList();
-          }, 1000);
+          }, 2000);
         }
       });
-      
     };
-    
+    this.empty = true;
     setTimeout(() => {
       if (this.lists.length > 0) {
-        this.empty = false;
+        this.empty = true;
         this.currentIndex = 0;
-        this.currentList = this.lists[this.currentIndex];
+        this.currentId = this.lists[0].uid;
+        this.currentList = this.lists[0];
       }
     }, 2000);
   }
@@ -170,24 +174,28 @@ export class AppComponent implements OnInit, OnDestroy {
   ngOnDestroy() {}
 
   getList() {
+    console.log('TOKEN', this.token);
     this._shoppingListService.getList().subscribe((res: any) => {
+      console.log(this.currentUser, res);
+
       this.lists = [];
       this.othersLists = [];
       if (res != null) {
         if (res.length > 0) {
-          res.forEach((list: any) => {
-            list.users.forEach((user: any) => {
-              if (user == this.currentUser) {
-                this.lists.push(list);
-              } else {
-                this.othersLists.push(list);
-              }
-            });
-          });
+          this.lists = res;
+          // res.forEach((list: any) => {
+          //   list.users.forEach((user: any) => {
+          //     if (user == this.currentUser) {
+          //       this.lists.push(list);
+          //     } else {
+          //       this.othersLists.push(list);
+          //     }
+          //   });
+          // });
           if (this.lists.length > 0) {
-            this.empty = false;
+            this.empty = true;
             this.currentList = 0;
-            this.currentId = this.lists[0].id;
+            this.currentId = this.lists[0].uid;
             this.currentList = this.lists[0];
           }
         } else {
@@ -198,23 +206,37 @@ export class AppComponent implements OnInit, OnDestroy {
         this.othersLists = [];
       }
     });
+    this.empty = true;
   }
 
   loginGoogle() {
     this._shoppingListService.googleAuthentication();
+    // setTimeout(() => {
+
+    // }, 500);
   }
 
   check(index: number) {
-    if (!this.lists[this.currentIndex].items[index].checked) {
+    if (
+      !this.lists[this.lists.indexOf(this.currentList)].items[
+        this.currentList.items.indexOf(index)
+      ].checked
+    ) {
       setTimeout(() => {
-        let checked = this.lists[this.currentIndex].items[index];
-        this.lists[this.currentIndex].items.splice(index, 1);
+        let checked =
+          this.lists[this.lists.indexOf(this.currentList)].items[
+            this.currentList.items.indexOf(index)
+          ];
+        this.lists[this.lists.indexOf(this.currentList)].items.splice(
+          this.currentList.items.indexOf(index),
+          1
+        );
         checked.checked = true;
-        this.lists[this.currentIndex].items.push(checked);
+        this.lists[this.lists.indexOf(this.currentList)].items.push(checked);
       }, 2000);
     }
-    let concatList = this.lists.concat(this.othersLists);
-    this._shoppingListService.putList(concatList);
+    // let concatList = this.lists.concat(this.othersLists);
+    this._shoppingListService.putList(this.lists);
   }
 
   print() {
@@ -225,19 +247,26 @@ export class AppComponent implements OnInit, OnDestroy {
 
   undo() {
     if (this.undoList.length > 0) {
-      this.lists[this.currentIndex].items.push(this.undoList[0]);
+      this.lists[this.lists.indexOf(this.currentList)].items.push(
+        this.undoList[0]
+      );
       this.undoList.splice(0, 1);
       // let concatList = this.lists.concat(this.othersLists);
-      // this._shoppingListService.putList(concatList);
+      this._shoppingListService.putList(this.lists);
     }
-    this.lists[this.currentIndex].items.forEach((item: any, index: number) => {
-      if (item.checked) {
-        this.lists[this.currentIndex].items.splice(index, 1);
-        this.lists[this.currentIndex].items.push(item);
+    this.lists[this.lists.indexOf(this.currentList)].items.forEach(
+      (item: any, index: number) => {
+        if (item.checked) {
+          this.lists[this.lists.indexOf(this.currentList)].items.splice(
+            index,
+            1
+          );
+          this.lists[this.lists.indexOf(this.currentList)].items.push(item);
+        }
       }
-    });
-    let concatList = this.lists.concat(this.othersLists);
-    this._shoppingListService.putList(concatList);
+    );
+    // let concatList = this.lists.concat(this.othersLists);
+    this._shoppingListService.putList(this.lists);
   }
 
   change() {
@@ -248,16 +277,17 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  deleteList(index: number) {
-    this.lists.splice(index, 1);
-    let concatList = this.lists.concat(this.othersLists);
-    this._shoppingListService.putList(concatList);
-    if (this.lists.length <= 0) {
-      this.empty = true;
-    }
+  deleteList(index: any) {
+    this.lists.splice(this.lists.indexOf(index), 1);
+    // let concatList = this.lists.concat(this.othersLists);
+    this._shoppingListService.putList(this.lists);
+
+    this.empty = true;
   }
 
-  openModal(type: string, index: number = 0) {
+  openModal(type: string, index: any = '') {
+    console.log('llklk');
+
     let data = {};
     if (type == 'LOG_OUT') {
       data = { type: type };
@@ -294,9 +324,16 @@ export class AppComponent implements OnInit, OnDestroy {
         if (a.price < b.price) return -1;
         return 0;
       });
+      console.log('ii', index);
+
       data = {
         type: type,
-        name: this.currentList.items[index].name,
+        name: this.lists[this.lists.indexOf(this.currentList)].items[
+          this.currentList.items.indexOf(index)
+        ].name,
+        // this.currentList.items[
+        //   this.currentList.items.indexOf(this.currentList)
+        // ].name,
         compare: new Set(this.itemsCompare),
       };
     } else if (type == 'NEW_LIST') {
@@ -304,9 +341,11 @@ export class AppComponent implements OnInit, OnDestroy {
     } else if (type == 'SHARE') {
       data = { type: type };
     } else if (type == 'EDIT_LIST') {
+      console.log(index, this.lists.indexOf(index));
+
       data = {
-        market: this.lists[index].market,
-        name: this.lists[index].name,
+        name: this.lists[this.lists.indexOf(index)].name,
+        market: this.lists[this.lists.indexOf(index)].market,
         type: type,
       };
     } else if (type == 'DELETE_LIST') {
@@ -315,8 +354,13 @@ export class AppComponent implements OnInit, OnDestroy {
       data = { type: type, price: this.prices };
     } else if (type == 'EDIT_ITEM') {
       data = {
-        name: this.lists[this.currentIndex].items[index].name,
-        price: this.lists[this.currentIndex].items[index].price,
+        name: this.lists[this.lists.indexOf(this.currentList)].items[
+          this.currentList.items.indexOf(index)
+        ].name,
+        price:
+          this.lists[this.lists.indexOf(this.currentList)].items[
+            this.currentList.items.indexOf(index)
+          ].price,
         type: type,
       };
     } else if (type == 'DELETE_ITEM') {
@@ -359,57 +403,68 @@ export class AppComponent implements OnInit, OnDestroy {
         }
       } else if (type == 'EDIT_LIST') {
         if (result != undefined && result != false) {
-          this.lists[index].name = result.name;
-          this.lists[index].market = result.market;
-          let concatList = this.lists.concat(this.othersLists);
-          this._shoppingListService.putList(concatList);
+          this.lists[this.lists.indexOf(index)].name = result.name;
+          this.lists[this.lists.indexOf(index)].market = result.market;
+          // let concatList = this.lists.concat(this.othersLists);
+          this._shoppingListService.putList(this.lists);
           this.drawer.close();
         }
       } else if (type == 'SHARE') {
+        console.log(
+          this.currentId,
+          this.lists.indexOf(this.currentId),
+          this.lists[this.lists.indexOf(index)]
+        );
+
         if (result) {
-          this.lists[this.currentIndex].users.push(result.email);
+          this.lists[this.lists.indexOf(index)].users.push(result.email);
 
-          let concatList = this.lists.concat(this.othersLists);
+          // let concatList = this.lists.concat(this.othersLists);
 
-          console.log('concat', this.lists.length, concatList.length);
-          // concatList = [];
-          // this._shoppingListService.putList(concatList);
+          this._shoppingListService.putList(this.lists);
         }
       } else if (type == 'DELETE_LIST') {
         if (result) {
           this._shoppingListService.postList(this.lists);
         }
-        if (this.lists.length <= 0) {
-          this.empty = true;
-        }
       } else if (type == 'NEW_ITEM') {
         if (result != undefined && result != false) {
-          this.lists[this.currentIndex].items.push({
+          this.lists[this.lists.indexOf(this.currentList)].items.push({
             name: result.name,
             price: result.price,
+            uid: uuid.v4(),
             checked: false,
             date: new Date(),
           });
-          if (this.lists[this.currentIndex].items[0] == '') {
-            this.lists[this.currentIndex].items.splice(0, 1);
+          if (this.lists[this.lists.indexOf(this.currentList)].items[0] == '') {
+            this.lists[this.lists.indexOf(this.currentList)].items.splice(0, 1);
           }
-          this.lists[this.currentIndex].items.forEach(
+          this.lists[this.lists.indexOf(this.currentList)].items.forEach(
             (item: any, index: number) => {
               if (item.checked) {
-                this.lists[this.currentIndex].items.splice(index, 1);
-                this.lists[this.currentIndex].items.push(item);
+                this.lists[this.lists.indexOf(this.currentList)].items.splice(
+                  index,
+                  1
+                );
+                this.lists[this.lists.indexOf(this.currentList)].items.push(
+                  item
+                );
               }
             }
           );
-          let concatList = this.lists.concat(this.othersLists);
-          this._shoppingListService.putList(concatList);
+          // let concatList = this.lists.concat(this.othersLists);
+          this._shoppingListService.putList(this.lists);
         }
       } else if (type == 'EDIT_ITEM') {
         if (result != undefined && result != false) {
-          this.lists[this.currentIndex].items[index].name = result.name;
-          this.lists[this.currentIndex].items[index].price = result.price;
-          let concatList = this.lists.concat(this.othersLists);
-          this._shoppingListService.putList(concatList);
+          this.lists[this.lists.indexOf(this.currentList)].items[
+            this.currentList.items.indexOf(index)
+          ].name = result.name;
+          this.lists[this.lists.indexOf(this.currentList)].items[
+            this.currentList.items.indexOf(index)
+          ].price = result.price;
+          // let concatList = this.lists.concat(this.othersLists);
+          this._shoppingListService.putList(this.lists);
         }
       } else if (type == 'DELETE_ITEM') {
         if (result) {
@@ -420,15 +475,20 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   deleteItem(index: number) {
-    this.undoList.push(this.lists[this.currentIndex].items[index]);
-    this.lists[this.currentIndex].items.splice(index, 1);
-    let concatList = this.lists.concat(this.othersLists);
-    this._shoppingListService.putList(concatList);
+    this.undoList.push(
+      this.lists[this.lists.indexOf(this.currentList)].items[
+        this.currentList.items.indexOf(index)
+      ]
+    );
+    this.lists[this.lists.indexOf(this.currentList)].items.splice(
+      this.currentList.items.indexOf(index),
+      1
+    );
+    // let concatList = this.lists.concat(this.othersLists);
+    this._shoppingListService.putList(this.lists);
   }
 
-  share() {
-    console.log('SHARE');
-  }
+  share() {}
 
   logout() {
     this.lists = [];
@@ -437,17 +497,19 @@ export class AppComponent implements OnInit, OnDestroy {
     this.existente = false;
     this.equivocado = false;
     this.currentUser = '';
+    this.token = '';
     localStorage.removeItem('upbToken');
     localStorage.removeItem('upbUser');
     this.formLogin.reset();
     this._shoppingListService.logout();
+    console.log('TOKEN', this.token);
   }
 
-  selectList(index: number) {
+  selectList(index: any) {
     this.empty = false;
-    this.currentIndex = index;
-    this.currentId = this.lists[index].id;
-    this.currentList = this.lists[index];
+    // this.currentIndex = index;
+    this.currentId = this.lists[this.lists.indexOf(index)].uid;
+    this.currentList = this.lists[this.lists.indexOf(index)];
     this.undoList = [];
     this.drawer.close();
   }
