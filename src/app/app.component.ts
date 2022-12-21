@@ -171,7 +171,10 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  ngOnDestroy() {}
+  ngOnDestroy() {
+    console.log('destroy');
+    this._shoppingListService.putList(this.lists);
+  }
 
   getList() {
     console.log('TOKEN', this.token);
